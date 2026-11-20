@@ -141,33 +141,6 @@ wheels = [
 ]
 
 [[package]]
-name = "honest-ats"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "pdfplumber" },
-    { name = "pymupdf" },
-    { name = "pypdfium2" },
-    { name = "pyyaml" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pdfplumber", specifier = ">=0.11.10" },
-    { name = "pymupdf", specifier = ">=2.1" },
-    { name = "pypdfium2", specifier = ">=5.15.2" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.2.0" }]
-
-[[package]]
 name = "iniconfig"
 version = "2.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -203,6 +176,33 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/45/74/bb9161943fb65caf24e4bb04c788f5c7815e6cb78ac595e7f46781033c82/numpy-2.5.5-cp313-cp313-win_amd64.whl", hash = "sha256:e0608d1585557b68dcb6a70a41654f7536567960afad79d91752d2863b242b68", size = 12573354, upload-time = "2026-11-15T21:30:53.308Z" },
     { url = "https://files.pythonhosted.org/packages/ac/b0/792631d03588912e948c1249c03a78ca9af0c548670f8fd63ea014cbc14a/numpy-2.5.5-cp313-cp313-win_arm64.whl", hash = "sha256:e0b87886bb45621d9279dad4ab9f2d154b5db0b019d378c107b8f71527b06a4a", size = 10528296, upload-time = "2026-11-15T21:30:55.681Z" },
 ]
+
+[[package]]
+name = "offersmith"
+version = "0.2.0"
+source = { editable = "." }
+dependencies = [
+    { name = "pdfplumber" },
+    { name = "pymupdf" },
+    { name = "pypdfium2" },
+    { name = "pyyaml" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pdfplumber", specifier = ">=0.11.10" },
+    { name = "pymupdf", specifier = ">=2.1" },
+    { name = "pypdfium2", specifier = ">=5.15.2" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.2.0" }]
 
 [[package]]
 name = "onnxruntime"

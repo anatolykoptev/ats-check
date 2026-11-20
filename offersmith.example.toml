@@ -1,0 +1,7 @@
+# Copy to offersmith.toml (next to where you work) or ~/.config/offersmith/offersmith.toml.
+# Paths may use ~; a relative path is relative to this file. Environment variables OFFERSMITH_MASTER, OFFERSMITH_GUARD,
+# OFFERSMITH_OUT and OFFERSMITH_WORKDAY_BASE override it, and a command-line flag overrides both.
+master = "examples/Jane Example — master resume.md"
+guard = ""          # default: "<stem> — claim guard.md" next to the master
+out_dir = "out"
+workday_base = ""   # https://<tenant>.wdN.myworkdayjobs.com/<site>

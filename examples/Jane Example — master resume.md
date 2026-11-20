@@ -32,11 +32,14 @@ Earlier title in the job-board profile: Head of Marketing.
 - **KPE-01** Directed fleets of AI coding agents across all products and reviewed each change before it shipped. `AP SS`
 - **KPE-03** Exposed the engines to AI agents through an MCP server and an OpenAI-compatible API on the user's own laptop. `AP SS`
 - **KPE-04** Built browser-based encrypted video calls and chat; now in rework. `AP`
+- **KPE-08** Designed the Go services behind the portal, from the HTTP API to the PostgreSQL schema. `AP SS`
+
+### Video Producer, Example Studio · 2024-01 to 2025-06 · Remote
 - **VID-03** Built dictation: hold a key, speak, text appears at the cursor, in Python. `video`
 
 ## 5. Projects
 ### Example Tool
-- **P-EXT-01** Built a knowledge graph backed by PostgreSQL and pgvector. `AP`
+- **P-EXT-01** Built a knowledge graph backed by PostgreSQL and pgvector for the portal; its pages drew 12,345 Google Search clicks (M-01). `AP`
 
 ## 6. Open source and publications
 | Repo | PR | Title | Merged |
@@ -44,6 +47,9 @@ Earlier title in the job-board profile: Head of Marketing.
 | acme/widgets | #17 | fix: default the admin UI to English instead of French | 2026-09-23 |
 
 - **OSS-01** Contributed a PostgreSQL graph backend upstream, merged. `AP oss`
+
+## 7. Education
+- BA, Example University, 2018.
 
 ## 8. Metrics bank
 | Id | Value | What it measures | Home |

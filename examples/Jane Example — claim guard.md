@@ -21,3 +21,9 @@ Binding for every resume. SYNTHETIC EXAMPLE.
 
 ## Wording rules
 - **Nimbus firewall:** Nimbus is an embeddable chat for marketplaces and never appears with the candidate's name. group calls and burner chats have been off in production.
+
+## Never mention in a letter
+One phrase per bullet, matched as whole words by the cover-letter checker.
+- work authorization
+- visa
+- Nimbus

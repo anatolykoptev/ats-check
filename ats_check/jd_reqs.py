@@ -33,7 +33,7 @@ Schema:
 
 Rules:
 - term = the exact phrase a recruiter would search (e.g. "Model Context Protocol"), 1-4 words, no sentences.
-- aliases = ONLY exact synonyms, acronyms or spelled-out forms of the SAME thing (e.g. ["MCP"]). Never a broader category or a related product: CRM is NOT an alias of Salesforce. Empty if none.
+- aliases = ONLY exact synonyms, acronyms or spelled-out forms of the SAME thing (e.g. ["MCP"]). Never a broader category or a related product: CRM is NOT an alias of Hubspot. Empty if none.
 - importance: "required" if under minimum/basic/required qualifications or phrased must/need; "preferred" if nice-to-have/bonus/preferred/plus; else "mentioned" (appears only in responsibilities or the team blurb).
 - Include hard skills, tools, platforms, domains, methodologies, titles of roles worked with, and soft requirements (kind "soft", e.g. "stakeholder management"). Skip company boilerplate, perks, benefits and equal-opportunity text.
 - 15 to 45 requirements, no duplicates.
@@ -113,7 +113,7 @@ def alias_ok(term: str, alias: str, groups: list[list[str]]) -> bool:
     if tt <= ta or (ta < tt and len(ta) >= 2):
         return True
     gl = [{x.lower() for x in g} for g in groups]
-    # only a slash-term ('AI/ML') is a list of alternatives: a token of 'Salesforce CRM' being in the CRM
+    # only a slash-term ('AI/ML') is a list of alternatives: a token of 'Hubspot CRM' being in the CRM
     # group must not make CRM an alias of the whole term
     alts = {a.strip() for a in re.split(r"[/&]", term.lower())} if re.search(r"[/&]", term) else set()
     return any(alias.lower() in g and (term.lower() in g or any(a in g for a in alts)) for g in gl)
@@ -153,7 +153,8 @@ def from_llm_json(d: dict, groups: list[list[str]] | None = None) -> JD:
 # ---------------------------------------------------------------- deterministic fallback
 REQ_HEAD = re.compile(r"(minimum|basic|required|key) (qualifications|requirements)|what you('| wi)ll need|you have|must have|requirements|who you are|about you|what we('| a)re looking for", re.I)
 PREF_HEAD = re.compile(r"preferred|nice to have|bonus|desired|ideal|a plus|extra credit|pluses", re.I)
-STOP_HEAD = re.compile(r"benefits|perks|compensation|salary|equal opportunity|accommodations|pay range|about salesforce|why", re.I)
+STOP_HEAD = re.compile(r"benefits|perks|compensation|salary|equal opportunity|accommodations|pay range|why", re.I)
+ABOUT_HEAD = re.compile(r"^about (?:us|the company|the team)\b", re.I)      # a heading line, not 'passionate about user experience'
 ACRO_STOP = {"US", "USA", "AND", "THE", "FOR", "WITH", "ALL", "YOU", "OUR", "EEO", "HR", "CEO", "USD", "PST", "PT", "OR", "IT", "AM", "PM", "NO", "OK", "AN", "TO", "ON", "IN", "OF", "BY", "AS", "AT", "WE", "IF", "DC"}
 PROPER = re.compile(r"\b[A-Z][a-z]+(?: [A-Z][a-z]+){1,3}\b")
 CAMEL = re.compile(r"\b(?:[A-Z][a-z]+[A-Z]\w*|[A-Za-z]+\.js|[A-Z]{2,}[a-z]+\w*)\b")
@@ -169,7 +170,7 @@ def _sections(text: str) -> list[tuple[str, str]]:
         if not s:
             continue
         short = len(s.split()) <= 9 and not s.endswith(".")
-        if short and STOP_HEAD.search(s):
+        if short and (STOP_HEAD.search(s) or ABOUT_HEAD.match(s)):
             cur = "stop"
         elif short and PREF_HEAD.search(s):
             cur = "preferred"
@@ -258,13 +259,13 @@ def consensus(jds: list[JD]) -> dict:
             parent[x] = parent[parent[x]]
             x = parent[x]
         return x
-    owner: dict[str, int] = {}
+    first_key: dict[str, int] = {}
     for k, (_, r) in enumerate(items):
         for f in _forms_key(r):
-            if f in owner:
-                parent[find(k)] = find(owner[f])
+            if f in first_key:
+                parent[find(k)] = find(first_key[f])
             else:
-                owner[f] = k
+                first_key[f] = k
     clusters: dict[int, list[int]] = {}
     for k in range(len(items)):
         clusters.setdefault(find(k), []).append(k)

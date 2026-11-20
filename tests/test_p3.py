@@ -24,7 +24,7 @@ Who You Are
 
 Nice to Have
 - Startup experience
-- Salesforce/CRM integrations
+- Hubspot/CRM integrations
 """
 RESUME = """Jane Doe
 Senior Engineer, Acme 2016-Present
@@ -111,7 +111,7 @@ def test_band_counts():
 def test_a_quote_that_is_not_in_the_resume_is_ungrounded_not_not_met():
     c = crit(("AI/ML in product", "basic", True))
     ok = gr.check_sample({"results": [res("c1", "met", Q)]}, c, RES)["c1"]
-    bad = gr.check_sample({"results": [res("c1", "met", "Shipped production LLM agents at Salesforce")]}, c, RES)["c1"]
+    bad = gr.check_sample({"results": [res("c1", "met", "Shipped production LLM agents at Hubspot")]}, c, RES)["c1"]
     none = gr.check_sample({"results": [res("c1", "partial", "")]}, c, RES)["c1"]
     assert ok["status"] == "met" and ok["grounded"] and ok["quote"] == Q
     assert bad["status"] == "ungrounded" and bad["claimed"] == "met" and bad["quote"] == ""      # never shown as a resume line
@@ -168,7 +168,7 @@ def test_missing_answer_is_no_answer_not_a_crash():
 
 def test_ungrounded_runs_are_not_not_met_and_their_quotes_are_never_shown(cache):
     c = crit(("AI/ML in product", "basic", True))
-    fake = Scripted([{"results": [res("c1", "met", "Shipped production LLM agents at Salesforce")]}])
+    fake = Scripted([{"results": [res("c1", "met", "Shipped production LLM agents at Hubspot")]}])
     g = gr.grade(c, RES, 5, runner=fake)
     r = g["rows"][0]
     assert r["status"] == "undecided" and r["ungrounded"] == 5 and r["votes"]["not_met"] == 0 and r["votes"]["met"] == 0
@@ -605,7 +605,7 @@ def test_a_fetched_jd_is_pinned_by_its_sha_in_the_cache_not_in_the_output_dir(ca
 
 
 def test_the_report_names_ungrounded_claims_and_never_prints_the_rejected_quote(cache):
-    fabricated = "Architected the Kubernetes operator fleet at Salesforce for 90 teams"
+    fabricated = "Architected the Kubernetes operator fleet at Hubspot for 90 teams"
     rc, out = cli_run(cache, p3_runner(fabricated), "--grade-samples", "3")
     md = (out / "report.md").read_text()
     assert rc == 0 and "model claimed met, quotes not found in resume" in md and fabricated not in md

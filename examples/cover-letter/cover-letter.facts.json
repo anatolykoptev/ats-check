@@ -1,0 +1,12 @@
+[
+ {"text": "So I asked an AI assistant ten questions a developer would ask about hosted Postgres, one per call, with web search off.", "artifact": "audit/results.md"},
+ {"text": "Example Cloud was named in seven of the ten answers and first in four.", "artifact": "audit/results.md"},
+ {"text": "In the three answers that named it second, the product ahead was picked on pricing, which is where I would look first.", "artifact": "audit/results.md"},
+ {"text": "On Example Portal I built a knowledge graph on PostgreSQL and pgvector, and its pages have drawn 12,345 Google Search clicks.", "ids": ["P-EXT-01", "M-01"]},
+ {"text": "I designed the Go services behind it, from the HTTP API down to the database schema", "ids": ["KPE-08"]},
+ {"text": "I also exposed our engines to AI agents through an MCP server and an OpenAI-compatible API that runs on the user's own laptop.", "ids": ["KPE-03"]},
+ {"text": "I design the architecture and direct AI coding agents, reviewing every change", "ids": ["KPE-01"]},
+ {"text": "A PostgreSQL graph backend I contributed was merged upstream", "ids": ["OSS-01"]},
+ {"text": "I would start with the three pricing questions, then repeat the test on assistants that search the web live.", "artifact": "audit/results.md"},
+ {"text": "The table with all ten answers is ready to send.", "artifact": "audit/results.md"}
+]

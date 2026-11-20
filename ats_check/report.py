@@ -165,9 +165,9 @@ def render_md(d: dict) -> str:
         L.append(f"## Soft requirements (evidenced in bullets? no weight in coverage): {len(ev)}/{len(soft)}")
         L.append("Evidenced: " + (", ".join(ev) or "none") + ".  Not evidenced: " + (", ".join(no) or "none") + ".")
         L.append("")
-    if d.get("ask_owner"):
-        L.append("## Ask the owner (hard requirements absent from the master: add only what the candidate can confirm)")
-        L.append(", ".join(d["ask_owner"]) + ".")
+    if d.get("ask_candidate"):
+        L.append("## Ask the candidate (hard requirements absent from the master: add only what the candidate can confirm)")
+        L.append(", ".join(d["ask_candidate"]) + ".")
         L.append("")
     if d["knockouts"]:
         L.append("## Knock-outs")

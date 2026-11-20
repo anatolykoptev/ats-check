@@ -1,201 +1,82 @@
-# honest-ats
+# Offersmith
 
-Honest local ATS resume checker: simulates an applicant tracking system (ATS) on one resume PDF against one
-job description (parse health, keyword match, an advisory AI screen) and refuses to suggest keywords you cannot
-back up with your own master resume. Built for agents that tune a resume per vacancy: run it, apply only the
-**true** fixes, re-render, run again. Formerly `ats-check`; the `ats-check` command still works.
+**Offersmith: from your real experience to a job offer.**
+
+A local job-application toolkit for a coding agent, packaged as a Claude Code plugin. You keep one private bank of your true facts (the master resume). The agent cuts a tailored resume and a cover letter from it, checks the resume the way an applicant tracking system reads it, and drafts form answers, and every sentence traces back to a fact you recorded. Nothing is invented, and the ATS check never suggests claiming something you have not done.
+
+It prepares the application. It does not find postings or submit anything: a job-search service finds the posting, Offersmith gets your application ready for it.
+
+## Workflow
+
+1. **Master resume** (`master-resume`): your fact bank. Every bullet has an id, every number has one home and a source, a claim guard lists what you must not claim, and a linter keeps it consistent.
+2. **Tailored resume** (`tailor-resume`): a one-to-two page cut from the master for one posting, in a parser-safe format, rendered to PDF and checked against format rules.
+3. **Cover letter** (`cover-letter`): one page, PDF plus plain text. A fact map ties every factual sentence to a master id or a file, and a checker rejects untraced numbers, stock phrases and anything your claim guard forbids.
+4. **ATS check** (`ats-check`): runs the PDF through five text extractors, matches the posting's requirements, and sorts every missing keyword into "true, add it", "gap, not yours to claim" or "rejected by your guard".
+5. **Form answers** (`application-answers`): drafts the short fields from the master and leaves legal and personal questions (work authorization, salary, demographics) to you.
+
+## Install
+
+### As a Claude Code plugin
 
 ```
-./honest-ats --resume R.pdf (--jd jd.txt | --workday-req JR367656 | --jd-url URL) \
-            [--master master.md] [--guard guard.md] [--samples N] [--out DIR] [--no-llm] [--refresh]
-            [--grade-samples N] [--recriteria] [--stability K]
+/plugin marketplace add anatolykoptev/offersmith
+/plugin install offersmith@offersmith
 ```
 
-- `--jd`: plain text. `--workday-req JRxxxx`: fetched from a Workday tenant given by
-  `--workday-base https://<tenant>.wdN.myworkdayjobs.com/<site>` (or the `ATS_CHECK_WORKDAY_BASE` environment variable; required).
-  `--jd-url`: Workday job URL, Greenhouse, Ashby, Lever (public JSON), or any page (JSON-LD
-  `JobPosting`, else stripped HTML).
-- `--master`: the master resume markdown (a private bank of every true fact about the candidate; see `examples/`). It switches on the **truth column** (below). The claim guard
-  `<stem> — claim guard.md` next to it is loaded automatically (`--guard` overrides); without one the report says so.
-- `--samples N` (default 5): run the haiku term extraction N times and keep the terms listed by at least half of them
-  (below). `--refresh` extracts again.
-- `--no-llm`: deterministic term extractor, no AI screen, no `claude` calls at all.
-- Output: `DIR/report.md` (one page: verdict, five highest-value fixes) and `DIR/report.json`
-  (everything, including per-extractor evidence). Exit 0 ok, 2 bad input, 3 JD fetch failed.
+On Claude Code 2.1.275 or later one step does both: `/plugin install offersmith --marketplace anatolykoptev/offersmith`.
 
-Run from any directory; `uv` resolves the pinned environment (`uv.lock`). Tests: `uv run pytest`.
-Mutation proof: `uv run python tests/mutate.py`.
+Then ask for what you want ("start my master resume", "tailor my resume for this posting", "run the ATS check"). The skills carry the procedure; the scripts they call ship in the plugin.
 
-## Master resume and claim guard
+Tools the skills use: `uv` and Python 3.13 (resolved by `uv`), poppler (`pdftotext`, `pdfinfo`), and for the resume and letter rendering `pandoc`, `typst` and `jq`. The LLM layers of the ATS check call the `claude` CLI and are optional (`--no-llm`).
 
-The truth column needs two markdown files you write yourself, in the layout of the synthetic pair in
-[`examples/`](examples/): a master resume (id-carrying bullets under Experience / Projects / Open source,
-a Skills table with an "Allowed wording" column) and a claim guard next to it, named `<stem> — claim guard.md`
-for a master named `<stem> — master resume.md` (or pass `--guard FILE`). The examples are made up; there is no
-real master in this repository. Keep your own outside the repository.
+### As a command line tool
 
-## What it does
+```
+uv tool install git+https://github.com/anatolykoptev/offersmith
+offersmith --resume resume.pdf --jd posting.txt --master "Your Name — master resume.md"
+```
 
-1. **Parse health** (blocking). Five engine families (poppler `-layout` and `-raw`, PyMuPDF, pdfplumber, pypdfium2, Filee) plus PyMuPDF geometry. Checks: extractor count, text
-   layer, ToUnicode / `(cid:N)` junk, ligature code points, icon glyphs, reading-order agreement,
-   column gutter, ruled tables, big images with no text (OCR shown as evidence when `tesseract` is
-   present), contact only in the header/footer band, then fields modelled on OpenResume run on
-   every extractor's text: name, email, phone, location, standard headings, per-job title +
-   company + parseable dates, education, skills. Each is PASS / WARN / FAIL with evidence. **Any
-   FAIL = verdict "FIX PARSING FIRST"**; nothing below it is trusted.
-2. **JD requirements.** `claude -p --model haiku` extracts requirements (term, aliases, importance,
-   knock-outs). One extraction is one draw: fresh extractions of one JD can list different terms and move the required
-   coverage of the same resume a lot. So it runs `--samples` times (a cache key per sample, in `~/.cache/ats-check/llm/`), keeps the terms
-   listed by >= ceil(N/2) samples (aliases unioned; importance and soft/hard by majority) and stores that consensus list
-   with its samples per JD in `~/.cache/ats-check/jdset/`, so a before/after run compares on one list. The resume is also
-   matched against each sample's own list: the report shows the **median** required coverage with the **min-max range**,
-   and the verdict uses the median. LLM aliases are kept only when
-   verifiable (acronym/expansion, same synonym group, more specific phrase): "CRM" is not an alias of
-   "Salesforce". Fallback: a deterministic extractor (headings give importance; noisier).
-3. **Match** against the text the machine parsed (not the PDF): whole-word, hyphen/plural tolerant,
-   acronym <-> spelled-out forms from `ats_check/synonyms.yaml` (edit it), placement weights, count,
-   stuffing (a specific term > 3 mentions; `Model Context Protocol (MCP)` is one mention). Short
-   acronyms (AI, ML, UX) are never counted as stuffing; a match inside `auto-identity-remove` or a path
-   is not a match.
-4. **AI screener** (advisory). `claude -p --model sonnet`, recruiter 30-second screen + AI-grader
-   rubric, grade A-D with reasons and truthful moves. Printed under its own heading; never feeds the
-   verdict.
-5. **P3 qualification grader** (shown first in report.md; `--no-llm` skips it). Models the documented per-qualification
-   grading (Workday HiredScore 2026, Ashby criteria, Greenhouse calibration). Step 1: sonnet splits the JD's basic and
-   preferred bullets into singular criteria, wording verbatim, each `basic|preferred` and `screenable` (false = a resume
-   cannot show it: "comfortable with ambiguity"). A generated criterion is rejected unless it sits word-bounded inside ONE
-   JD bullet, is that whole bullet or >= 3 words, comes from a qualification section (Requirements / Qualifications /
-   Who you are / Nice to have / Even better if...), and does not drop a not/no/without its bullet carries; a level that
-   disagrees with the JD heading is flagged. For a JD with no recognisable sections the report says only "criteria text
-   verified present in the JD". The split runs once per JD and is pinned in `criteria-<jd sha12>.yaml` **next to the JD
-   file** (for a fetched JD: `~/.cache/ats-check/criteria/`, keyed by the JD's sha, so every resume shares one pin). The
-   file is yours to edit; it is validated before any LLM call (malformed: exit 2) and never overwritten without
-   `--recriteria`, which keeps the old file as `.yaml.bak`.
-   Step 2: `--grade-samples N` (default 5) independent sonnet runs over the parsed resume text, criteria shuffled per run
-   (seeded by the run index), each returning `met|partial|not_met` and one resume line. The quote is checked in code: >= 3
-   words, word-bounded, inside ONE resume segment (a bullet; a bullet wrapped over PDF lines counts as one), after
-   case / smart-quote / dash / middle-dot / whitespace normalisation; ellipsis-joined fragments must share a segment.
-   A run whose quote fails is `ungrounded`: it is not counted as `not_met`, its quote is never shown, and when most runs
-   are ungrounded the criterion is `undecided` with "model claimed met, quotes not found in resume". A `met` resting only
-   on the Skills section for an experience-type criterion ("experience", "years", "built"...) is capped at `partial`.
-   A status needs >= ceil(0.8 N) runs, else `undecided`. With `--master` the quoted line is traced to the id bullet /
-   Skills row it is cut from by word overlap ("NOT TRACEABLE to one master bullet" for composite lines).
-   Band, on the basic screenable criteria only: all `met` -> "A/B band", any `not_met` -> "C/D band", otherwise "band
-   undecided". **Deviation from the plan's binary rule**: HiredScore documents A/B vs C/D; a basic criterion that is only
-   partial or undecided (none not met) gets the third outcome here instead of a forced C/D. The rule is documented for
-   HiredScore; whether an employer runs it is unknown, so the wording is conditional. The grader and the resume writer share
-   a model family, which biases it upward (arXiv 2509.00462). It is a structured opinion, not a prediction. One call per
-   run grades all criteria together (the platform grades each on its own).
-   `--stability K` re-grades K times fresh (own salt per invocation) and prints and writes (`stability.json`) the
-   per-criterion flip rate.
-6. **Score.** See below.
+`offersmith` is the main command; `honest-ats` and `ats-check` are the same command under its earlier names. From a checkout, `./offersmith` runs the pinned environment from any directory. Reference: [docs/ats-check.md](docs/ats-check.md).
 
-### The truth column (needs `--master`)
+## Configuration
 
-Each requirement gets one of: `ok` (in the resume), `TRUE, ADD IT` (absent from the resume, present
-in the master evidence, which is quoted), `add the other form`, `gap, not added until the master records it`
-(absent from both), `not supported by master` (a claim-guard row).
+Put an `offersmith.toml` in the directory you work in, or in `~/.config/offersmith/`, or point `OFFERSMITH_CONFIG` at one:
 
-- **Evidence is structural.** Support comes only from (a) id-carrying bullets `- **KPE-01** ...` under the
-  Experience / Projects / Open source sections and (b) the "Allowed wording" cells of the Skills table. Rules,
-  variant keyword banks, cut procedures, tables of PR titles, headers and prose notes are never evidence: a word found
-  there is a coincidence ("text appears at the cursor" is not Cursor). A product or proper-noun term (a single
-  Capitalised word that is not a synonym-group head: Cursor, French, LinkedIn, OpenAI) matches case-sensitively, and
-  never as the head of a hyphenated modifier ("OpenAI-compatible" is not OpenAI).
-- **The claim guard is a structure, not text.** Its "Claims not supported" and "Metrics not used" table rows become rejected
-  claims; its text is never evidence. A years claim ("7+ years of software engineering") rejects a requirement only when the
-  JD asks for years of that area, a metric ("350K MAU") only the requirement that names it ("MAU"), a plain claim the same
-  phrase. A row's own "write instead" wording keeps a term usable ("English (professional working proficiency)").
-  A rejected requirement is never `TRUE, ADD IT`.
-- A master line that denies a term ("Java: none", "has NOT worked in Salesforce") never counts as support, but only when it
-  denies the term itself ("events, not website visitors" denies "website visitors", not "website"). A cue covers items that start
-  with the term, so "Salesforce CRM" is covered and the bare word CRM is not. If the resume itself has such a term, a top-ranked
-  "Confirm" fix appears. Hard requirements absent from the master are listed in an "Ask the owner" block.
-- A word match is still only a word match: read the quoted master line before adding anything.
-- "X% if the listed true additions are made" is **not a ceiling**: it prices only the `TRUE, ADD IT` rows (a flat 0.7 each); it
-  does not model moving a present term to a better placement, nor a master fact worded differently from the JD.
+```toml
+master       = "~/offersmith/master/Your Name — master resume.md"   # the fact bank
+guard        = ""                                                    # default: "<stem> — claim guard.md" next to the master
+out_dir      = "~/offersmith/out"                                    # ATS reports go to <out_dir>/<resume stem>
+workday_base = ""                                                    # https://<tenant>.wdN.myworkdayjobs.com/<site>, for --workday-req
+```
 
-### Score weights (all in code: `jd_reqs.IMPORTANCE_W`, `match.PLACEMENT_W`, `score.py`)
+`OFFERSMITH_MASTER`, `OFFERSMITH_GUARD`, `OFFERSMITH_OUT` and `OFFERSMITH_WORKDAY_BASE` override the file; a command-line flag overrides both. Keep your master outside this repository.
 
-- Requirement importance: required 3, preferred 2, mentioned 1.
-- Placement credit (best placement + 0.1 per extra distinct placement, cap 1.0): current/most recent
-  role 1.0, headline 0.8, summary 0.7, recent role 0.7, projects 0.6, older role 0.5, other 0.5,
-  Skills list 0.4, education 0.3. Stuffing caps a term at 0.5.
-- Soft requirements (LLM kind `soft`, or a term like communication / collaboration / mentoring /
-  stakeholder / mindset) are **not in coverage**: recruiter keyword search runs on hard skills, tools
-  and titles. They get their own report section ("evidenced in a role bullet?") with zero weight.
-- Coverage (hard requirements only) = importance-weighted mean of those credits, in whole percent, reported for the resume as
-  is and "if the listed true additions are made" (every `TRUE, ADD IT` item at 0.7; not a ceiling). Required-only and
-  overall are both shown. No decimals: the weights are judgment, not measurement.
-- Verdict order: parse FAIL -> `FIX PARSING FIRST`; a knock-out marked `risk` -> `KNOCK-OUT RISK`;
-  else the MEDIAN required coverage over the extraction samples: >= 80 strong, >= 60 moderate, else weak. Strong is held at
-  `STRONG KEYWORDS, YEARS GATE TO CHECK` while a JD years requirement is `review` or `unknown`. A JD with only preferred terms
-  is `NO REQUIRED KEYWORDS`.
-- Fix ranking: parse FAIL (1000) > knock-out risk/add (200/150) > true additions
-  (40 x importance x gain) > other-form (14 x importance) > use-in-role (10 x importance) >
-  stuffing (20) > parse WARN (30).
+A synthetic master, its sidecars, a resume and a letter for a made-up candidate (Jane Example) are in [`examples/`](examples/). Copy them as the starting point.
 
-## What the output can and cannot be trusted for
+## The honesty principle
 
-- **Trust:** parse failures (the extractors really disagree, and the evidence quotes the text);
-  which JD terms are literally absent from what a parser reads; where a term sits; the master-based
-  split of true additions vs gaps vs rejected claims.
-- **Do not trust as a prediction:** the coverage percent or the AI grade. No public spec exists for
-  Workday/HiredScore/Ashby ranking, so the AI layer is an LLM proxy and the coverage number is a
-  relative guide for comparing two versions of the same resume against the same JD, not a
-  probability of being shortlisted.
-- Not modelled: knock-out questions asked inside the application form, recruiter sourcing outside
-  the ATS, DOCX-specific parsing (headers in DOCX are dropped more reliably than in PDF; here the
-  header check is positional, a heuristic), non-English resumes, OCR-based pipelines (image OCR via `tesseract` is
-  evidence only, not scored).
-- Knock-outs: "N+ years of <area>" is computed from the dated entries whose title or bullets name the area (never from the total
-  career span); no such entry -> `review`. A years requirement without an area uses the career span and stays a human call.
-  Location and clearance are surfaced for review, never decided.
-- Deterministic JD extraction (`--no-llm`) is noisier: read its term list before acting.
+- Every claim in a resume, letter or answer comes from a master bullet, a metrics row or a file you can open. A fact the master lacks is a question for you, never a sentence.
+- The claim guard is binding: wording you cannot support, numbers you decided not to use, names that must stay out of a letter.
+- The master has no absence notes ("never used X"): a skill you lack simply does not appear, and the one negative list is the guard.
+- The ATS check marks a missing keyword "true, add it" only when an id-carrying master bullet or the Skills table supports it, and it quotes that line so you can confirm the exact claim. A word found in a rule or a note is a coincidence, not evidence.
+- You say once how the work was done (for example that AI coding agents wrote the code under your review) and never hide it. See [docs/voice-and-truth.md](docs/voice-and-truth.md).
 
-## Safety of the LLM layers
+## What the ATS check can and cannot tell you
 
-Every call is `claude -p --tools "" --settings '{"permissions":{"deny":["Read"]}}'
---setting-sources "" --safe-mode --strict-mcp-config --disable-slash-commands`, prompt on stdin, empty
-temp cwd, JSON out. `--tools ""` alone does not stop `@path` reads, and the deny fails open on a bad
-value, so before the first LLM call per CLI version the tool plants a canary file naming a random
-fruit and aborts the LLM layers (falls back to deterministic) if the model can name it. Positive
-control measured on 2.1.325: without the deny the canary leaks, with it it does not.
-Resume and JD text are inserted as data with an instruction not to follow them.
+- **Trust:** parse failures (the extractors really disagree, and the evidence quotes the text); which posting terms are literally absent from what a parser reads; where a term sits; the master-based split of true additions, gaps and rejected claims.
+- **Do not trust as a prediction:** the coverage percent or the AI grade. No public spec exists for Workday, HiredScore or Ashby ranking, so the AI layer is an LLM proxy and the coverage number is a relative guide for comparing two versions of the same resume against the same posting, not a probability of being shortlisted.
+- **Not modelled:** knock-out questions inside the application form, recruiter sourcing outside the ATS, DOCX-specific parsing, non-English resumes, OCR-based pipelines.
+- Knock-outs (years, degree, location, clearance) are surfaced for you to answer, never decided.
 
-## Dependencies
+The scoring rules, the extractors and the safety of the LLM calls are documented in [docs/ats-check.md](docs/ats-check.md).
 
-Python 3.13 via `uv` (`pyproject.toml` + `uv.lock`): PyMuPDF, pdfplumber, PyYAML. System: poppler
-(`pdftotext`), `curl` (JD fetch: Workday's edge answers 429 to Python's urllib on the detail call),
-`claude` CLI (Claude Code; LLM layers, optional with `--no-llm`), optional `tesseract` (image OCR evidence), optional `filee` CLI. No Java,
-no JVM, no download cache: everything is a Python wheel or a tool already installed.
+## Privacy
 
-### Extractors: why these engines
+Everything runs on your machine: the master, resumes, letters and reports are files you own, and nothing is uploaded. The only data that leaves is what the ATS check's optional LLM layers send to the `claude` CLI (the posting text and your resume text, sandboxed, with no tools and no file access), and the posting fetch when you pass `--jd-url` or `--workday-req`. Run with `--no-llm` and a saved posting file to send nothing at all. This repository holds no real resume, master or posting.
 
-| Extractor | Engine | Family it stands for |
-|---|---|---|
-| `pdftotext-layout`, `pdftotext-raw` | poppler | Linux/server toolchains, many desktop viewers; `-layout` interleaves columns, `-raw` follows the content stream |
-| `pymupdf` | MuPDF | fast commercial-grade extraction, block/stream order |
-| `pdfplumber` | pdfminer.six | the Python ecosystem's default (resume parsers built on spaCy/NLTK usually start here) |
-| `pypdfium2` | PDFium | Chrome / Edge PDF viewers, so what a browser-based parser sees |
-| `filee` | PdfPig, the .NET port of Apache PDFBox (Filee's PDF to TXT, installed CLI `filee`, override `ATS_CHECK_FILEE`) | the Java / PDFBox family used by Tika-based pipelines, without a JVM |
+## Development
 
-If `filee` is missing the extractor is skipped with a WARN ("extractors" check), not a FAIL; the
-other four engine families still compare. The version of each is in `report.json`.
-Apache Tika was dropped (it needs a JVM, which flashes a Dock icon on macOS).
-
-## Tests
-
-`uv run pytest` needs `pdftotext` (poppler) and `tesseract`. The suite replaces the Filee CLI with `tests/fake_filee` (poppler text behind Filee's argv), so results do not depend on a locally installed `filee`; the real PdfPig engine is therefore not exercised by the tests.
-
-`tests/fixtures/*.pdf` (all about a made-up candidate, Jane Q. Example) are generated with `typst` (`uv run python tests/make_fixtures.py`):
-clean (must pass everything), two-column, ruled table, contact only in page header, ligature code
-points, "My Journey" heading, "Spring '22" dates, skills as an image, icon glyphs, and a copy of the
-clean one with ToUnicode stripped. Each bad fixture trips its own check and a mutation proves it
-(`tests/mutate.py` edits one call site, the named test must go RED; every mutant is killed, run it to see the count). LLM layers are
-mocked (the CLI path is exercised by patching `llm.subprocess`, where the default runner is bound); the sandbox flags, canary logic and alias verification are unit-tested.
-
-Docs: [docs/prior-art.md](docs/prior-art.md).
+`uv sync --locked`, then `uv run pytest` (the letter and resume tests also need `pandoc`, `typst`, `jq` and poppler; in CI a missing tool fails the run). `uv run python tests/mutate.py` runs the mutation proof for the matching, scoring and config call sites. `claude plugin validate .` checks the manifests. Documents: [docs/INDEX.md](docs/INDEX.md).
 
 ## License
 

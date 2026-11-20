@@ -27,8 +27,6 @@ groups:
   - [Google Cloud Platform, GCP, Google Cloud]
   - [Microsoft Azure, Azure]
   - [Customer Relationship Management, CRM]
-  - [Salesforce, SFDC]
-  - [Agentforce, Salesforce Agentforce]
   - [Slack, Slack platform]
   - [Solution Architecture, solutions architect, solution architect, solution design]
   - [Proof of Concept, POC, proof-of-concept, working prototype, working proofs]

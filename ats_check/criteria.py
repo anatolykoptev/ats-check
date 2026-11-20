@@ -4,7 +4,7 @@ One LLM call per JD, wording verbatim. The result is pinned in `criteria-<jd sha
 file and every later run loads it: the split is itself an LLM step and would bring the instability back
 if it were redrawn per run. The file is human-editable and never overwritten without `--recriteria`.
 A generated criterion whose text is not a (normalised) piece of one JD bullet is a coined term and is
-rejected; a coined one in a hand-edited file is kept (the owner's call) but flagged.
+rejected; a coined one in a hand-edited file is kept (the user's call) but flagged.
 """
 from __future__ import annotations
 

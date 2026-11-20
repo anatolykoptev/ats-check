@@ -1,10 +1,10 @@
 """Master resume markdown -> what may be claimed. The truth column is only as honest as this split.
 
-Support comes ONLY from structure the owner wrote to be quoted:
+Support comes ONLY from structure the candidate wrote to be quoted:
   (a) id-carrying bullets `- **KPE-01** ...` under the Experience / Projects / Open source sections,
   (b) the "Allowed wording" cells of the Skills table.
 Rules, variant keyword banks, cut procedures, tables of PR titles, headers and prose notes are
-never evidence (a requirement word found there is a coincidence, not a fact the owner can claim).
+never evidence (a requirement word found there is a coincidence, not a fact the candidate can claim).
 
 The claim guard (`<stem> — claim guard.md`, or the `Rejected claims` section of an older single-file
 master) is parsed as STRUCTURE: its table rows become rejected claims, its text is never evidence.

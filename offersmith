@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# offersmith entry (honest-ats and ats-check are symlinks to this file): runs the pinned uv project next to it from any cwd.
+set -euo pipefail
+here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")" && pwd)"
+exec uv run --quiet --project "$here" python -I -m ats_check.cli "$@"

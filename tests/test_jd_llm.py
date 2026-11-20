@@ -12,7 +12,7 @@ San Francisco, CA
 
 Minimum Qualifications
 - 5+ years of experience in solutions engineering
-- Hands-on with Model Context Protocol (MCP) and Agentforce
+- Hands-on with Model Context Protocol (MCP) and PagerDuty
 - Strong SQL skills
 
 Preferred Qualifications
@@ -23,7 +23,7 @@ Benefits
 
 LLM_JSON = {"title": "Slack AI Solution Strategist", "location": "San Francisco",
             "requirements": [{"term": t, "aliases": a, "kind": "skill", "importance": i} for t, a, i in [
-                ("Model Context Protocol", ["MCP"], "required"), ("Agentforce", [], "required"), ("SQL", [], "required"),
+                ("Model Context Protocol", ["MCP"], "required"), ("PagerDuty", [], "required"), ("SQL", [], "required"),
                 ("Tableau", [], "preferred"), ("Solutions engineering", [], "required"), ("Slack", [], "mentioned")]],
             "knockouts": {"years": [{"min": 5, "area": "solutions engineering"}]}}
 
@@ -34,7 +34,7 @@ def test_html_to_text_keeps_bullets_and_paragraphs():
 
 
 @pytest.mark.parametrize("url,expect", [
-    ("https://salesforce.wd12.myworkdayjobs.com/External_Career_Site", ("https://salesforce.wd12.myworkdayjobs.com", "salesforce", "External_Career_Site")),
+    ("https://example.wd12.myworkdayjobs.com/External_Career_Site", ("https://example.wd12.myworkdayjobs.com", "example", "External_Career_Site")),
     ("https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/US-CA/X_JR1", ("https://nvidia.wd5.myworkdayjobs.com", "nvidia", "NVIDIAExternalCareerSite")),
 ])
 def test_workday_url_generalises_to_any_tenant_and_site(url, expect):
@@ -165,16 +165,16 @@ def test_end_to_end_no_llm(tmp_path):
     jd = tmp_path / "jd.txt"
     jd.write_text(JD_TEXT)
     master = tmp_path / "m.md"
-    master.write_text(bank("Built Agentforce agents for Slack."))
+    master.write_text(bank("Built PagerDuty agents for Slack."))
     out = tmp_path / "out"
     rc = cli.main(["--resume", str(fx / "clean.pdf"), "--jd", str(jd), "--master", str(master), "--no-llm", "--out", str(out)])
     assert rc == 0
     d = json.loads((out / "report.json").read_text())
     st = {r["term"]: r["status"] for r in d["requirements"]}
-    assert st["Model Context Protocol"] == "ok" and st["Agentforce"] == "add_it" and st["Tableau"] == "gap"
+    assert st["Model Context Protocol"] == "ok" and st["PagerDuty"] == "add_it" and st["Tableau"] == "gap"
     md = (out / "report.md").read_text()
     assert md.index("Top fixes") < md.index("Parse health") and "TRUE, ADD IT" in md
-    assert any(f["kind"] == "add_it" and f["term"] == "Agentforce" for f in d["fixes"])
+    assert any(f["kind"] == "add_it" and f["term"] == "PagerDuty" for f in d["fixes"])
 
 
 def test_failed_parse_gates_the_verdict(tmp_path):
@@ -189,14 +189,14 @@ def test_failed_parse_gates_the_verdict(tmp_path):
 
 @pytest.mark.parametrize("term,alias,ok", [
     ("Model Context Protocol", "MCP", True),
-    ("Salesforce", "CRM", False),               # a category, not a synonym
-    ("Salesforce", "Salesforce CRM", True),
+    ("Hubspot", "CRM", False),               # a category, not a synonym
+    ("Hubspot", "Hubspot CRM", True),
     ("Large Language Models", "LLM", True),
     ("AI/ML", "Machine Learning", True),
     ("Kubernetes", "K8s", True),
     ("Postgres", "Oracle", False),
     ("Microsoft Teams", "Teams", False),         # one generic word out of a longer term
-    ("Salesforce CRM", "CRM", False),            # the term's own token being in the CRM group is no proof
+    ("Hubspot CRM", "CRM", False),            # the term's own token being in the CRM group is no proof
     ("OpenAI API", "API", False),
     ("Slack platform", "Slack", True),           # the yaml says they are one thing
 
@@ -206,14 +206,14 @@ def test_llm_aliases_are_trusted_only_when_verifiable(term, alias, ok):
 
 
 def test_unverifiable_alias_is_dropped_and_reported():
-    d = {"requirements": [{"term": "Salesforce", "aliases": ["CRM", "Salesforce CRM"], "importance": "required"}] +
+    d = {"requirements": [{"term": "Hubspot", "aliases": ["CRM", "Hubspot CRM"], "importance": "required"}] +
          [{"term": f"t{i}", "aliases": [], "importance": "mentioned"} for i in range(6)]}
     jd = jd_reqs.from_llm_json(d, G)
-    assert jd.requirements[0].aliases == ["Salesforce CRM"]
+    assert jd.requirements[0].aliases == ["Hubspot CRM"]
     assert any("CRM" in w for w in jd.warnings)
 
 
-def test_report_lists_soft_separately_and_asks_the_owner_about_absent_hard_terms(tmp_path):
+def test_report_lists_soft_separately_and_asks_the_candidate_about_absent_hard_terms(tmp_path):
     fx = Path(__file__).parent / "fixtures"
     jd = tmp_path / "jd.txt"
     jd.write_text(JD_TEXT.replace("- Strong SQL skills", "- Strong SQL skills\n- Strong stakeholder management and communication"))
@@ -222,8 +222,23 @@ def test_report_lists_soft_separately_and_asks_the_owner_about_absent_hard_terms
     out = tmp_path / "out"
     cli.main(["--resume", str(fx / "clean.pdf"), "--jd", str(jd), "--master", str(master), "--no-llm", "--out", str(out)])
     d = json.loads((out / "report.json").read_text())
-    assert "Tableau" in d["ask_owner"] and not any(x in d["ask_owner"] for x in ("Stakeholder Management", "Model Context Protocol"))
+    assert "Tableau" in d["ask_candidate"] and not any(x in d["ask_candidate"] for x in ("Stakeholder Management", "Model Context Protocol"))
     md = (out / "report.md").read_text()
-    assert "## Soft requirements" in md and "## Ask the owner" in md
+    assert "## Soft requirements" in md and "## Ask the candidate" in md
     hard_rows = md.split("## Hard requirements")[1].split("## Soft")[0]
     assert "Stakeholder Management" not in hard_rows
+
+
+def test_deterministic_extractor_ignores_an_about_the_company_section():
+    text = "Engineer\nRemote\n\nMinimum Qualifications\n- Python\n\nAbout the company\nWe use Terraform and Kubernetes everywhere.\n"
+    terms = {r.term for r in jd_reqs.deterministic(text, G, V).requirements}
+    assert "Python" in terms and "Terraform" not in terms and "Kubernetes" not in terms
+
+
+def test_only_an_about_us_heading_line_stops_the_requirements():
+    # mutations in jd_reqs.ABOUT_HEAD: drop the \b (line 1 "About users" stops) or use .search (line 2 mid-line "about the team" stops)
+    text = "Engineer\nRemote\n\nMinimum Qualifications\nAbout users and SQL\n- Care about the team and Python\n"
+    terms = {r.term for r in jd_reqs.deterministic(text, G, V).requirements}
+    assert {"SQL", "Python"} <= terms
+    stopped = {r.term for r in jd_reqs.deterministic(text + "\nAbout us\nWe use Kubernetes.\n", G, V).requirements}
+    assert "Kubernetes" not in stopped

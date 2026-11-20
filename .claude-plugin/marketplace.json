@@ -1,0 +1,12 @@
+{
+  "name": "offersmith",
+  "description": "Offersmith: from your real experience to a job offer.",
+  "owner": { "name": "Anatoly Koptev" },
+  "plugins": [
+    {
+      "name": "offersmith",
+      "source": "./",
+      "description": "Local job-application toolkit: master resume, tailored resume, cover letter, form answers, honest ATS check."
+    }
+  ]
+}
