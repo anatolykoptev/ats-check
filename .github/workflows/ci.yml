@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: astral-sh/setup-uv@v10.3.3
-      - name: poppler (pdftotext extractor)
-        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: poppler (pdftotext extractor) and tesseract (OCR evidence test)
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils tesseract-ocr
       - run: uv sync --locked
       - run: uv run --locked pytest -q

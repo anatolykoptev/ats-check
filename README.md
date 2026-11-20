@@ -184,6 +184,8 @@ Apache Tika was dropped (it needs a JVM, which flashes a Dock icon on macOS).
 
 ## Tests
 
+`uv run pytest` needs `pdftotext` (poppler) and `tesseract`. The suite replaces the Filee CLI with `tests/fake_filee` (poppler text behind Filee's argv), so results do not depend on a locally installed `filee`; the real PdfPig engine is therefore not exercised by the tests.
+
 `tests/fixtures/*.pdf` (all about a made-up candidate, Jane Q. Example) are generated with `typst` (`uv run python tests/make_fixtures.py`):
 clean (must pass everything), two-column, ruled table, contact only in page header, ligature code
 points, "My Journey" heading, "Spring '22" dates, skills as an image, icon glyphs, and a copy of the

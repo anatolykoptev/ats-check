@@ -1,0 +1,6 @@
+#!/bin/sh
+# Test stand-in for the Filee CLI (PdfPig): same argv contract, text from poppler. The suite uses it so it does not
+# depend on whether a real `filee` is installed on the machine.
+if [ "$1" = version ]; then echo "filee-test-stand-in"; exit 0; fi
+# convert SRC --to txt -o OUT --overwrite --quiet
+mkdir -p "$6" && exec pdftotext -layout "$2" "$6/in.txt"
