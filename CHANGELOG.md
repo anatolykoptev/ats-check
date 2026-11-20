@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Renamed the project and repository to honest-ats. The `ats-check` command and the `ats_check` Python package keep working.
+
 ## 0.1.0
 
 - Initial public release: parse health across five PDF engine families, JD requirement extraction, match with truth column against a master resume and claim guard, advisory AI screen and qualification grader.

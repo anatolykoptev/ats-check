@@ -1,7 +1,7 @@
 # Security policy
 
 Report a vulnerability through GitHub private vulnerability reporting:
-https://github.com/anatolykoptev/ats-check/security/advisories/new — or open the Security
+https://github.com/anatolykoptev/honest-ats/security/advisories/new — or open the Security
 tab of this repository and choose "Report a vulnerability". Do not open a
 public issue for it.
 
