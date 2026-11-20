@@ -73,6 +73,11 @@ def absence(text: str, neg, full: bool = True) -> bool:
     return False
 
 
+def phrase_in(phrase: str, text: str) -> bool:
+    """The phrase as a whole, case-insensitive: '6,000+' is not inside '16,000+', 'visa' is not inside 'advisable'."""
+    return re.search(r"(?<![\w,.])" + re.escape(phrase) + r"(?!\w)", text, re.I) is not None
+
+
 def guard_phrases(path: str) -> list[str]:
     """Quoted claims (else the claim cell) in the guard's 'Claims not supported' table, and the values in its
     'Metrics not used' table: both are prohibitions a bullet or a letter must not repeat."""
@@ -221,7 +226,7 @@ def main(path: str, guard: str = "") -> int:
     # 5. a claim the guard rejects must not sit in a bank bullet
     for phrase in guard_phrases(guard_file):
         for n, i, _, line in bank_bullets:
-            if phrase.lower() in line.lower():
+            if phrase_in(phrase, line):
                 out.append(f"L{n} bullet {i} contains a claim the guard rejects: {phrase[:60]}")
 
     for f in out:

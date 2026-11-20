@@ -162,6 +162,11 @@ def load_master(path: str, guard_arg: str = ""):
 ID_TOKEN = re.compile(r"\b[A-Z]+(?:-[A-Z]+)?-\d{2,}\b")      # DEV-40, P-EXT-01, M-01: labels, not evidence
 
 
+def phrase_in(phrase: str, text: str) -> bool:
+    """The phrase as a whole, case-insensitive: '6,000+' is not inside '16,000+'."""
+    return re.search(r"(?<![\w,.])" + re.escape(phrase) + r"(?!\w)", text, re.I) is not None
+
+
 def digits(s: str) -> set[str]:
     return {n.replace(",", "").rstrip(".") for n in NUM.findall(ID_TOKEN.sub(" ", s))}
 
@@ -210,7 +215,7 @@ def main() -> int:
         if re.search(rf"(?<![A-Za-z0-9]){re.escape(phrase)}(?![A-Za-z0-9])", seen, re.I):
             out.append(f"wording the guard says never to mention: '{phrase}'")
     for phrase in guard:
-        if phrase.lower() in seen.lower():
+        if phrase_in(phrase, seen):
             out.append(f"contains a claim the guard rejects: {phrase[:60]}")
 
     # fact map

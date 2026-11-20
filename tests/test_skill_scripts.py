@@ -336,3 +336,10 @@ def test_never_mention_also_covers_the_printed_header_and_subject(letter):
     edit(letter, "subject: Growth Engineer, Search and Answers", "subject: Growth Engineer, Nimbus partnership")
     rc, out = run_letter(letter)
     assert rc == 1 and "wording the guard says never to mention: 'Nimbus'" in out, out
+
+
+def test_a_prohibited_number_is_not_matched_inside_a_longer_number(bank):
+    # mutation: check_master / check_letter phrase_in back to a plain `phrase.lower() in text.lower()` substring test
+    seed_bullet(bank, "- **KPE-12** Piloted the engines with 1120 devices, 40 calls. `AP`")
+    rc, out = py(CHECK_MASTER, bank / MASTER_NAME)
+    assert "contains a claim the guard rejects" not in out, out
