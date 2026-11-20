@@ -1,0 +1,10 @@
+{
+  "name": "offersmith",
+  "version": "0.2.0",
+  "description": "From your real experience to a job offer: master resume, tailored resume, cover letter, form answers and an honest ATS check, built only from your own facts and run locally.",
+  "author": { "name": "Anatoly Koptev" },
+  "homepage": "https://github.com/anatolykoptev/offersmith",
+  "repository": "https://github.com/anatolykoptev/offersmith",
+  "license": "Apache-2.0",
+  "keywords": ["resume", "cover-letter", "ats", "job-search", "applicant-tracking-system", "agent-skills"]
+}

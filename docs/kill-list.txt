@@ -1,0 +1,70 @@
+# Offersmith kill-list: wording that reads as machine-written or as self-praise.
+# Read by skills/cover-letter/scripts/check_letter.py. One phrase per line, `#` starts a comment, blank lines ignored.
+# A single word also matches its inflections (leverage, leveraged, leveraging). Hyphens and spaces are the same.
+# Text inside double quotes in a letter is exempt: it is somebody else's wording.
+# Keep at least 35 entries: the checker stops (exit 2) when fewer load, so an edit cannot silently empty it.
+
+# praise as self-description
+exceptional
+impressive
+sophisticated
+remarkable
+elegant
+brilliant
+masterful
+world-class
+industry-leading
+best-in-class
+top-tier
+cutting-edge
+state-of-the-art
+transformative
+
+# culture buzzwords
+rockstar
+ninja
+guru
+wizard
+10x
+
+# machine tells
+delve
+tapestry
+realm
+robust
+seamless
+leverage
+synergize
+orchestrate
+spearhead
+eager
+passionate about
+under the hood
+in today's fast-paced world
+navigate the landscape
+
+# chat filler
+great question
+absolutely
+i hope this helps
+
+# resume filler
+results-driven
+detail-oriented
+highly motivated
+team player
+self-starter
+proven track record
+go-getter
+hit the ground running
+think outside the box
+game changer
+
+# letter openers and closers
+i am writing to express my strong interest
+i am thrilled to apply
+i was particularly excited to learn about
+exactly the kind of work i want to do
+i look forward to hearing
+thank you for considering
+i would welcome the opportunity
