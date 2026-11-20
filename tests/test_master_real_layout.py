@@ -39,7 +39,7 @@ def R(term, kind="skill", imp="required"):
 
 
 def test_the_claim_guard_next_to_the_master_is_loaded_and_rejects(tmp_path):
-    res, d = analyze([R("software engineering"), R("post-quantum cryptography"), R("Nimbus"), R("MAU")],
+    res, d = analyze([R("software engineering"), R("post-quantum cryptography"), R("PagerDuty"), R("MAU")],
                      years=[{"min": 5, "area": "software engineering"}])
     assert res["software engineering"]["status"] == "rejected"
     assert res["post-quantum cryptography"]["status"] == "rejected"
@@ -66,7 +66,7 @@ def test_missing_guard_is_a_loud_warning(tmp_path):
     ("OpenAI", "tool"), ("OpenAI API", "tool"),                      # 'OpenAI-compatible API'
     ("autonomous agents", "skill"),                                 # keyword bank only
     ("group calls", "skill"),                                       # a wording rule that FORBIDS the claim
-    ("Nimbus", "tool"),                                           # wording rule
+    ("PagerDuty", "tool"),                                           # wording rule
 ])
 def test_words_outside_evidence_are_never_add_it(term, kind):
     r = direct([R(term, kind)])[term]

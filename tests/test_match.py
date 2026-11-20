@@ -20,7 +20,7 @@ Software Engineer, Globex  Mar 2015 – Dec 2017
 SKILLS
 Python, Go, Docker, SQL, Terraform
 """
-MASTER = bank("Led Terraform migrations for 40 services.", "Wrote SQL reporting for finance teams.", "Salesforce Agentforce pilot with Slack.")
+MASTER = bank("Led Terraform migrations for 40 services.", "Wrote SQL reporting for finance teams.", "Hubspot PagerDuty pilot with Slack.")
 G, _ = jr.load_synonyms()
 
 
@@ -75,18 +75,18 @@ def test_stuffing_detector_caps_score():
 
 
 def test_truth_column_add_it_vs_gap():
-    res = run([R("Terraform"), R("Agentforce"), R("Tableau")])
+    res = run([R("Terraform"), R("PagerDuty"), R("Tableau")])
     # Terraform is in the resume skills -> ok
     assert res["Terraform"].status == "ok"
-    # Agentforce is in the master only -> true, add it
-    assert res["Agentforce"].status == "add_it" and res["Agentforce"].master_hit
+    # PagerDuty is in the master only -> true, add it
+    assert res["PagerDuty"].status == "add_it" and res["PagerDuty"].master_hit
     # Tableau in neither -> gap, never add
     assert res["Tableau"].status == "gap" and not res["Tableau"].master_hit
 
 
 def test_truth_column_without_master_never_says_add_it():
-    res = run([R("Agentforce")], master=None)
-    assert res["Agentforce"].status == "gap"
+    res = run([R("PagerDuty")], master=None)
+    assert res["PagerDuty"].status == "gap"
 
 
 def test_skills_only_term_with_usage_in_master_is_upgradable():
@@ -135,15 +135,15 @@ def test_ubiquitous_acronyms_are_never_nagged():
 
 
 def test_add_it_carries_the_master_line_as_evidence():
-    r = run([R("Agentforce")])["Agentforce"]
-    assert r.status == "add_it" and "Agentforce pilot" in r.master_evidence
+    r = run([R("PagerDuty")])["PagerDuty"]
+    assert r.status == "add_it" and "PagerDuty pilot" in r.master_evidence
 
 
-REAL_MASTER = bank("Built Agentforce agents for Slack.", "Shipped software engineering tooling.", "Reached 1,000 users in the beta.") + "\n## Open questions\n- Does Kubernetes appear anywhere?\n"
+REAL_MASTER = bank("Built PagerDuty agents for Slack.", "Shipped software engineering tooling.", "Reached 1,000 users in the beta.") + "\n## Open questions\n- Does Kubernetes appear anywhere?\n"
 GUARD = guard(("7+ years of software engineering", "No engineering employment", "write the real years"),
               ("post-quantum cryptography", "flaw found", "write encrypted calls"),
               ("Example Portal \"350K MAU\"", "never measured", "12,345 clicks"),
-              ("Fluent in English", "owner states working proficiency", "English (professional working proficiency)"),
+              ("Fluent in English", "candidate states working proficiency", "English (professional working proficiency)"),
               ("7 GitHub stars", "stars are not traction", "Link the repo"))
 
 
@@ -183,8 +183,8 @@ def test_guard_row_whose_write_instead_wording_names_the_term_does_not_reject_it
 
 def test_guard_rows_are_structure_never_evidence():
     # the guard text must not become support: "post-quantum cryptography" is written in it
-    r = run_ko([R("Nimbus"), R("encrypted calls")], master=bank("Built things."))
-    assert r["Nimbus"].status == "gap" and r["encrypted calls"].status == "gap"
+    r = run_ko([R("PagerDuty"), R("encrypted calls")], master=bank("Built things."))
+    assert r["PagerDuty"].status == "gap" and r["encrypted calls"].status == "gap"
 
 
 def test_open_questions_are_not_evidence():
@@ -194,9 +194,9 @@ def test_open_questions_are_not_evidence():
 
 
 def test_master_evidence_is_centred_on_the_match():
-    long = bank("filler " * 40 + "built Agentforce pilots " + "tail " * 40)
-    r = run([R("Agentforce")], master=long)["Agentforce"]
-    assert "Agentforce" in r.master_evidence and len(r.master_evidence) < 200
+    long = bank("filler " * 40 + "built PagerDuty pilots " + "tail " * 40)
+    r = run([R("PagerDuty")], master=long)["PagerDuty"]
+    assert "PagerDuty" in r.master_evidence and len(r.master_evidence) < 200
 
 
 def test_term_inside_a_hyphenated_name_or_path_is_not_a_match():
@@ -305,5 +305,5 @@ def test_a_looser_guard_hit_does_not_discard_real_support_but_the_exact_claim_is
 
 
 def test_write_instead_wording_lets_an_unsupported_term_stay_a_plain_gap():
-    g = guard(("Fluent in English", "owner states working proficiency", "English (professional working proficiency)"))
+    g = guard(("Fluent in English", "candidate states working proficiency", "English (professional working proficiency)"))
     assert run_ko([R("English")], master=bank("Built things."), guard_text=g)["English"].status == "gap"   # not 'rejected'

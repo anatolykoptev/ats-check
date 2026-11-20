@@ -1,9 +1,9 @@
 """Negation scope in a master line. A master line that denies a term must not count as support for
 it (a quiet safety net; the term then simply stays a gap):  "GCP, Azure and Kubernetes not yet",
-"Salesforce: no hands-on work yet as of 2026-01-01", "has NOT worked in Salesforce", "Java: none".
+"Hubspot: no hands-on work yet as of 2026-01-01", "has NOT worked in Hubspot", "Java: none".
 Scope is the term's own clause: an item list after a cue, an item list before "not yet", or a
-"TERM: none" tail.  A cue governs only items that START with the term, so "never claim Salesforce
-CRM" covers Salesforce (and the compound) but not the bare word CRM, and a qualifier such as
+"TERM: none" tail.  A cue governs only items that START with the term, so "never claim Hubspot
+CRM" covers Hubspot (and the compound) but not the bare word CRM, and a qualifier such as
 "never bare AWS" restricts the wording instead of denying AWS. """
 from __future__ import annotations
 
@@ -77,7 +77,7 @@ def is_negated(line: str, a: int) -> bool:
 
 
 # Words that may follow the term inside a denied item without making it a different thing:
-# "never claim Salesforce CRM" denies Salesforce, "no Kubernetes in production" denies Kubernetes,
+# "never claim Hubspot CRM" denies Hubspot, "no Kubernetes in production" denies Kubernetes,
 # but "events, not website visitors" does not deny "website" (it denies "website visitors").
 DENY_REST = {"crm", "platform", "api", "apis", "cloud", "experience", "work", "knowledge", "background", "skills", "skill",
              "development", "engineering", "in", "on", "with", "at", "for", "of", "as", "to", "and", "or", "any", "yet",

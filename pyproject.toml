@@ -1,7 +1,7 @@
 [project]
-name = "honest-ats"
-version = "0.1.0"
-description = "Local ATS simulation for resumes: parse health, JD match, truth column, advisory AI screen"
+name = "offersmith"
+version = "0.2.0"
+description = "Offersmith: local job-application toolkit (Claude Code plugin and CLI) with an honest ATS check"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "pdfplumber>=0.11.10",
@@ -11,6 +11,7 @@ dependencies = [
 ]
 
 [project.scripts]
+offersmith = "ats_check.cli:main"
 honest-ats = "ats_check.cli:main"
 ats-check = "ats_check.cli:main"
 

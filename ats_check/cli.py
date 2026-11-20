@@ -1,4 +1,4 @@
-"""ats-check CLI."""
+"""offersmith CLI (also installed as honest-ats and ats-check)."""
 from __future__ import annotations
 
 import argparse
@@ -14,20 +14,21 @@ from . import health as hl
 from . import criteria as crit_mod
 from . import llm
 from . import grade as grade_mod
+from . import config as config_mod
 from . import jd_fetch, jd_reqs, match, report, score
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="ats-check", description="Local ATS simulation for a resume PDF against a job description.")
+    p = argparse.ArgumentParser(prog="offersmith", description="Local ATS simulation for a resume PDF against a job description.")
     p.add_argument("--resume", required=True, type=Path, help="resume PDF")
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--jd", type=Path, help="job description text file")
     g.add_argument("--workday-req", metavar="JRxxxxx", help="Workday requisition id (see --workday-base)")
     g.add_argument("--jd-url", help="Workday / Greenhouse / Ashby / Lever / any job page URL")
-    p.add_argument("--workday-base", default=os.environ.get("ATS_CHECK_WORKDAY_BASE"), help="https://<tenant>.wdN.myworkdayjobs.com/<site> (default: $ATS_CHECK_WORKDAY_BASE; required with --workday-req)")
-    p.add_argument("--master", type=Path, help="master resume markdown (truth column)")
+    p.add_argument("--workday-base", help="https://<tenant>.wdN.myworkdayjobs.com/<site> (default: workday_base in offersmith.toml, $OFFERSMITH_WORKDAY_BASE or $ATS_CHECK_WORKDAY_BASE; required with --workday-req)")
+    p.add_argument("--master", type=Path, help="master resume markdown (truth column; default: master in offersmith.toml or $OFFERSMITH_MASTER)")
     p.add_argument("--guard", type=Path, help="claim guard markdown (default: '<stem> — claim guard.md' next to --master)")
-    p.add_argument("--out", type=Path, help="output dir (default ./ats-out/<resume stem>)")
+    p.add_argument("--out", type=Path, help="output dir (default: <out_dir>/<resume stem> from offersmith.toml, else ./ats-out/<resume stem>)")
     p.add_argument("--no-llm", action="store_true", help="deterministic JD extraction, no AI screen")
     p.add_argument("--refresh", action="store_true", help="ignore the LLM cache and the stored term list: extract again")
     p.add_argument("--samples", type=int, default=jd_reqs.DEFAULT_SAMPLES, metavar="N",
@@ -88,7 +89,7 @@ def analyze(args) -> dict:
         jd_text, label = args.jd.read_text(), str(args.jd)
     elif args.workday_req:
         if not args.workday_base:
-            print("ats-check: --workday-req needs --workday-base or ATS_CHECK_WORKDAY_BASE", file=sys.stderr)
+            print("offersmith: --workday-req needs --workday-base, workday_base in offersmith.toml or ATS_CHECK_WORKDAY_BASE", file=sys.stderr)
             raise SystemExit(2)
         jd_text, label = jd_fetch.fetch_workday(args.workday_base, req=args.workday_req), f"workday:{args.workday_req}"
     else:
@@ -131,22 +132,36 @@ def analyze(args) -> dict:
                "samples": jd.n_samples, "stability": jd.stability},
         "requirements": [{**{k: getattr(r, k) for k in ("term", "aliases", "kind", "importance", "count", "placements", "best", "score", "flags", "forms_present", "forms_missing", "votes", "master_hit", "master_usage", "master_evidence", "master_negated", "soft", "status", "achievable")}} for r in results],
         "knockouts": kos, "ai": ai,
-        "ask_owner": [r.term for r in results if not r.soft and r.status == "gap" and r.importance in ("required", "preferred")][:15] if master else [],
+        "ask_candidate": [r.term for r in results if not r.soft and r.status == "gap" and r.importance in ("required", "preferred")][:15] if master else [],
     }
+
+
+def apply_config(args, cfg: config_mod.Config) -> None:
+    """Flag > environment > offersmith.toml (config.load already put the environment above the file)."""
+    args.master = args.master or cfg.master
+    args.guard = args.guard or cfg.guard
+    args.workday_base = args.workday_base or cfg.workday_base
+    if args.out is None and cfg.out_dir is not None:
+        args.out = cfg.out_dir / args.resume.stem
 
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
+    try:
+        apply_config(args, config_mod.load())
+    except config_mod.ConfigError as e:
+        print(f"offersmith: {e}", file=sys.stderr)
+        return 2
     if not args.resume.exists():
-        print(f"ats-check: no such resume: {args.resume}", file=sys.stderr)
+        print(f"offersmith: no such resume: {args.resume}", file=sys.stderr)
         return 2
     try:
         d = analyze(args)
     except jd_fetch.FetchError as e:
-        print(f"ats-check: could not fetch the JD: {e}", file=sys.stderr)
+        print(f"offersmith: could not fetch the JD: {e}", file=sys.stderr)
         return 3
     except crit_mod.PinnedFileError as e:
-        print(f"ats-check: {e}", file=sys.stderr)
+        print(f"offersmith: {e}", file=sys.stderr)
         return 2
     out = out_dir(args)
     report.write(out, d)

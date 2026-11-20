@@ -15,7 +15,7 @@ RESUME = "Jane Q. Example\nEngineer\nSan Francisco, CA · j@example.com\nSKILLS\
 LANGS = ('- **Languages and platforms:** C++ (audio engine on whisper.cpp), never as a standalone senior skill; Java: none. '
          'Cloud and tools: "Oracle Cloud (OCI), Docker Compose" may go in Skills; OCI is the only cloud he runs production on, '
          'so never write GCP, Azure or Kubernetes. AWS: write it narrowly as "AWS (SES email delivery)", never bare "AWS".')
-SF = ('- Uses CRM daily for ad sales and has NOT worked in Salesforce (candidate note): never claim Salesforce CRM.')
+SF = ('- Uses CRM daily for ad sales and has NOT worked in Hubspot (candidate note): never claim Hubspot CRM.')
 
 
 def no_support(r):
@@ -34,16 +34,16 @@ def status(term, master, aliases=()):
     return r
 
 
-@pytest.mark.parametrize("term", ["Java", "GCP", "Azure", "Kubernetes", "Salesforce"])
+@pytest.mark.parametrize("term", ["Java", "GCP", "Azure", "Kubernetes", "Hubspot"])
 def test_negated_terms_are_prohibitions_never_support(term):
     r = status(term, LANGS + "\n" + SF)
     assert no_support(r), (term, r.status)
 
 
-def test_crm_stays_usable_while_salesforce_is_prohibited_in_the_same_sentence():
+def test_crm_stays_usable_while_example_is_prohibited_in_the_same_sentence():
     assert status("CRM", SF).status == "add_it"
-    assert no_support(status("Salesforce", SF))
-    assert no_support(status("Salesforce CRM", SF))
+    assert no_support(status("Hubspot", SF))
+    assert no_support(status("Hubspot CRM", SF))
 
 
 def test_negation_beats_a_loose_positive_mention_elsewhere():
@@ -88,11 +88,11 @@ def test_no_x_dependency_is_not_a_claim_negation():
     assert status("AWS", "- no AWS dependency in his own repos, so write it narrowly.").status == "add_it"
 
 
-DATED = ("- Salesforce: no hands-on work yet as of 2026-01-01 (candidate). Java: no work yet as of 2026-01-01. "
+DATED = ("- Hubspot: no hands-on work yet as of 2026-01-01 (candidate). Java: no work yet as of 2026-01-01. "
          "As of 2026-11-19 OCI is the only cloud he runs production on; GCP, Azure and Kubernetes not yet.")
 
 
-@pytest.mark.parametrize("term", ["Salesforce", "Java", "GCP", "Azure", "Kubernetes"])
+@pytest.mark.parametrize("term", ["Hubspot", "Java", "GCP", "Azure", "Kubernetes"])
 def test_dated_denials_are_no_support(term):
     assert no_support(status(term, DATED)), term
 
@@ -102,7 +102,7 @@ def test_dated_denials_leave_sibling_terms_usable():
 
 
 def test_current_master_has_no_denial_lines_so_absent_terms_are_plain_gaps():
-    r = status("Salesforce", "- Built things in Go.")
+    r = status("Hubspot", "- Built things in Go.")
     assert r.status == "gap" and not r.master_negated
 
 
@@ -111,7 +111,7 @@ def test_report_wording_has_no_ban_vocabulary(tmp_path):
     from ats_check import cli
     fx = Path(__file__).parent / "fixtures"
     jd = tmp_path / "jd.txt"
-    jd.write_text("Engineer\nSF\n\nMinimum Qualifications\n- Salesforce and Kubernetes and Python\n- Haskell\n")
+    jd.write_text("Engineer\nSF\n\nMinimum Qualifications\n- Hubspot and Kubernetes and Python\n- Haskell\n")
     master = tmp_path / "m.md"
     master.write_text(wrap(DATED) + "\n## Rejected claims\n| \"Haskell wizardry\" | no | none |\n")
     out = tmp_path / "out"
@@ -129,7 +129,7 @@ def test_a_denied_longer_phrase_does_not_deny_the_word_it_starts_with():
 
 
 def test_zero_before_a_capitalised_name_is_a_denial_but_zero_as_a_number_is_not():
-    assert no_support(status("Salesforce", "- Zero Salesforce work."))
+    assert no_support(status("Hubspot", "- Zero Hubspot work."))
     assert status("Rust", "- Cut errors to zero in Rust services.").status == "add_it"
 
 

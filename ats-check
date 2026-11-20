@@ -1,5 +1,1 @@
-#!/usr/bin/env bash
-# ats-check entry: runs the pinned uv project next to this script from any cwd.
-set -euo pipefail
-here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")" && pwd)"
-exec uv run --quiet --project "$here" python -I -m ats_check.cli "$@"
+offersmith

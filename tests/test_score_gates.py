@@ -1,4 +1,4 @@
-"""Verdict thresholds, coverage arithmetic and the years gate: the numbers the owner is shown."""
+"""Verdict thresholds, coverage arithmetic and the years gate: the numbers the user is shown."""
 import pytest
 
 from ats_check import fields as fd
