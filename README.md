@@ -1,10 +1,12 @@
-# ats-check
+# honest-ats
 
-Local ATS simulation for one resume PDF against one job description. Built for agents that tune a
-resume per vacancy: run it, apply only the **true** fixes, re-render, run again.
+Honest local ATS resume checker: simulates an applicant tracking system (ATS) on one resume PDF against one
+job description (parse health, keyword match, an advisory AI screen) and refuses to suggest keywords you cannot
+back up with your own master resume. Built for agents that tune a resume per vacancy: run it, apply only the
+**true** fixes, re-render, run again. Formerly `ats-check`; the `ats-check` command still works.
 
 ```
-./ats-check --resume R.pdf (--jd jd.txt | --workday-req JR367656 | --jd-url URL) \
+./honest-ats --resume R.pdf (--jd jd.txt | --workday-req JR367656 | --jd-url URL) \
             [--master master.md] [--guard guard.md] [--samples N] [--out DIR] [--no-llm] [--refresh]
             [--grade-samples N] [--recriteria] [--stability K]
 ```

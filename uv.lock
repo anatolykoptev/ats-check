@@ -3,33 +3,6 @@ revision = 5
 requires-python = "==3.13.*"
 
 [[package]]
-name = "ats-check"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "pdfplumber" },
-    { name = "pymupdf" },
-    { name = "pypdfium2" },
-    { name = "pyyaml" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pdfplumber", specifier = ">=0.11.10" },
-    { name = "pymupdf", specifier = ">=2.1" },
-    { name = "pypdfium2", specifier = ">=5.15.2" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.2.0" }]
-
-[[package]]
 name = "cffi"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -166,6 +139,33 @@ source = { registry = "https://pypi.org/simple" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl", hash = "sha256:7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4", size = 26661, upload-time = "2025-12-19T23:16:13.622Z" },
 ]
+
+[[package]]
+name = "honest-ats"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "pdfplumber" },
+    { name = "pymupdf" },
+    { name = "pypdfium2" },
+    { name = "pyyaml" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pdfplumber", specifier = ">=0.11.10" },
+    { name = "pymupdf", specifier = ">=2.1" },
+    { name = "pypdfium2", specifier = ">=5.15.2" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.2.0" }]
 
 [[package]]
 name = "iniconfig"

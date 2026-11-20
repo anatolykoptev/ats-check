@@ -2,7 +2,7 @@
 
 | Document | Description |
 |---|---|
-| [README](../README.md) | ats-check |
+| [README](../README.md) | honest-ats |
 | [CLAUDE](../CLAUDE.md) | CLAUDE.md |
 | [CHANGELOG](../CHANGELOG.md) | Changelog |
 | [CONTRIBUTING](../CONTRIBUTING.md) | Contributing |
