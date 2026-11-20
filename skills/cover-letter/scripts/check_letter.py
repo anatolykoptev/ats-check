@@ -101,7 +101,11 @@ def find_cliches(body: str, terms: list[str]) -> list[str]:
     text = norm(text.lower().replace("-", " ").replace("’", "'"))
     hits = []
     for t in terms:
-        pat = rf"(?<![a-z0-9]){re.escape(t)}" + (r"[a-z]*" if " " not in t else "") + r"(?![a-z0-9])"
+        if " " in t:
+            pat = rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])"
+        else:      # a single word also matches its inflections, including the dropped final e (leverage, leveraging)
+            stem = t[:-1] if t.endswith("e") and len(t) > 4 else t
+            pat = rf"(?<![a-z0-9]){re.escape(stem)}[a-z]*(?![a-z0-9])"
         if re.search(pat, text):
             hits.append(t)
     return hits
@@ -122,12 +126,13 @@ def never_mention(guard_file: str) -> list[str]:
     return out
 
 
-def load_master(path: str):
+def load_master(path: str, guard_arg: str = ""):
     if not os.path.exists(CHECK_MASTER):
         die(f"master-resume checker not found: {CHECK_MASTER}")
     spec = importlib.util.spec_from_file_location("check_master", CHECK_MASTER)
     cm = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(cm)
+    explicit_master = bool(path)
     path = path or cm.default_master()
     if not path:
         die("no master resume: pass --master, or set master in offersmith.toml (or $OFFERSMITH_MASTER)")
@@ -147,12 +152,18 @@ def load_master(path: str):
         die(f"no bullet ids found in {path}")
     folder, base = os.path.split(path)
     stem = base.rsplit(" — ", 1)[0] if " — " in base else ""
-    guard_file = os.path.join(folder, f"{stem} — claim guard.md")
-    return ids, cm.guard_phrases(guard_file), never_mention(guard_file)
+    sibling = os.path.join(folder, f"{stem} — claim guard.md")
+    guard_file = guard_arg or ("" if explicit_master else cm.default_guard()) or sibling
+    if guard_file != sibling and not os.path.exists(guard_file):
+        die(f"claim guard not found: {guard_file}")
+    return guard_file, ids, cm.guard_phrases(guard_file), never_mention(guard_file)
+
+
+ID_TOKEN = re.compile(r"\b[A-Z]+(?:-[A-Z]+)?-\d{2,}\b")      # DEV-40, P-EXT-01, M-01: labels, not evidence
 
 
 def digits(s: str) -> set[str]:
-    return {n.replace(",", "").rstrip(".") for n in NUM.findall(s)}
+    return {n.replace(",", "").rstrip(".") for n in NUM.findall(ID_TOKEN.sub(" ", s))}
 
 
 def main() -> int:
@@ -161,6 +172,7 @@ def main() -> int:
     ap.add_argument("--min", type=int, default=250)
     ap.add_argument("--max", type=int, default=320)
     ap.add_argument("--master", default="")
+    ap.add_argument("--guard", default="", help="claim guard (default: `guard` in offersmith.toml when the master comes from it, else the sibling file)")
     ap.add_argument("--facts", default="")
     a = ap.parse_args()
     for tool in ("pandoc", "pdfinfo"):
@@ -188,12 +200,17 @@ def main() -> int:
     # cliches, off-limits wording, claim guard
     for t in find_cliches(body, kill_list(KILL_LIST)):
         out.append(f"cliche from the kill-list: '{t}'")
-    ids, guard, never = load_master(a.master)
+    guard_file, ids, guard, never = load_master(a.master, a.guard)
+    if not os.path.exists(guard_file):
+        out.append(f"claim guard not found: {guard_file} (off-limits wording and rejected claims were not checked)")
+    # everything printed is checked, not only the body: the header, subject, recipient and sign-off go out too
+    printed = " ".join(str(x) for v in meta.values() for x in (v if isinstance(v, list) else [v]) if x is not None)
+    seen = body + " " + printed
     for phrase in never:
-        if re.search(rf"(?<![A-Za-z0-9]){re.escape(phrase)}(?![A-Za-z0-9])", body, re.I):
+        if re.search(rf"(?<![A-Za-z0-9]){re.escape(phrase)}(?![A-Za-z0-9])", seen, re.I):
             out.append(f"wording the guard says never to mention: '{phrase}'")
     for phrase in guard:
-        if phrase.lower() in body.lower():
+        if phrase.lower() in seen.lower():
             out.append(f"contains a claim the guard rejects: {phrase[:60]}")
 
     # fact map

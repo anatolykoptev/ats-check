@@ -167,7 +167,7 @@ MUTANTS = [
     ("report.py", "    if d.get(\"p3\") is not None:", "    if False:", f"{P3}::test_report_has_the_p3_block_above_the_keyword_sections", "P3: the report carries the P3 block at the top"),
     ("report.py", "withm = bool(p3.get(\"master\"))", "withm = False", f"{P3}::test_master_column_flags_a_line_with_no_master_bullet", "P3: master id column shown with --master"),
     ("report.py", "        flag = f\" ({r['note']})\" if r.get(\"note\") else \"\"", "        flag = \"\"", f"{P3}::test_the_report_names_ungrounded_claims_and_never_prints_the_rejected_quote", "P3: the report names an ungrounded majority"),
-    ("jd_reqs.py", "|about (?:us|the company|the team)|why", "|why", f"{J}::test_deterministic_extractor_ignores_an_about_the_company_section", "About-the-company section is not read as requirements"),
+    ("jd_reqs.py", 'ABOUT_HEAD = re.compile(r"^about (?:us|the company|the team)\\b", re.I)', 'ABOUT_HEAD = re.compile(r"about (?:us|the company|the team)", re.I)', f"{J}::test_only_an_about_us_heading_line_stops_the_requirements", "only an About-us heading line stops the requirements"),
     ("cli.py", "    args.master = args.master or cfg.master\n", "    args.master = args.master\n", "tests/test_config.py::test_cli_takes_master_and_out_dir_from_the_file", "offersmith.toml master reaches the CLI"),
     ("cli.py", "        args.out = cfg.out_dir / args.resume.stem", "        pass", "tests/test_config.py::test_cli_takes_master_and_out_dir_from_the_file", "offersmith.toml out_dir reaches the CLI"),
     ("config.py", "    for k, var in ENV.items():", "    for k, var in ():", "tests/test_config.py::test_environment_beats_the_file", "environment overrides the file"),

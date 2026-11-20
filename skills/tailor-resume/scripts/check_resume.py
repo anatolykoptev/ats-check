@@ -76,15 +76,15 @@ def main() -> int:
         if not os.path.isfile(a.master):
             print(f"cannot check: no such master: {a.master}", file=sys.stderr)
             return 2
-        bank = open(a.master, encoding="utf-8").read().replace(",", "")
+        bank = {n.replace(",", "").rstrip(".") for n in NUM.findall(open(a.master, encoding="utf-8").read())}
         for n, b in bullets:
             for num in NUM.findall(b):
                 flat = num.replace(",", "").rstrip(".")
-                if len(flat) >= 2 and flat not in bank:
+                if len(flat) >= 2 and flat not in bank:      # a whole number, not a substring of another
                     out.append(f"L{n} number {num} is not in the master: {b[:50]}")
-    pdfname = re.search(r"^pdf:\s*(\S+)\s*$", front, re.M)
+    pdfname = re.search(r"""^pdf:\s*(?:"([^"]+)"|'([^']+)'|(\S+))\s*$""", front, re.M)
     pdf = os.path.join(os.path.dirname(os.path.abspath(a.resume)),
-                       pdfname.group(1) if pdfname else os.path.splitext(os.path.basename(a.resume))[0] + ".pdf")
+                       next(g for g in pdfname.groups() if g) if pdfname else os.path.splitext(os.path.basename(a.resume))[0] + ".pdf")
     if os.path.exists(pdf):
         if not shutil.which("pdfinfo"):
             print("cannot check: pdfinfo (poppler) is not installed", file=sys.stderr)

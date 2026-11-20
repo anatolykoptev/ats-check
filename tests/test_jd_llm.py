@@ -233,3 +233,12 @@ def test_deterministic_extractor_ignores_an_about_the_company_section():
     text = "Engineer\nRemote\n\nMinimum Qualifications\n- Python\n\nAbout the company\nWe use Terraform and Kubernetes everywhere.\n"
     terms = {r.term for r in jd_reqs.deterministic(text, G, V).requirements}
     assert "Python" in terms and "Terraform" not in terms and "Kubernetes" not in terms
+
+
+def test_only_an_about_us_heading_line_stops_the_requirements():
+    # mutations in jd_reqs.ABOUT_HEAD: drop the \b (line 1 "About users" stops) or use .search (line 2 mid-line "about the team" stops)
+    text = "Engineer\nRemote\n\nMinimum Qualifications\nAbout users and SQL\n- Care about the team and Python\n"
+    terms = {r.term for r in jd_reqs.deterministic(text, G, V).requirements}
+    assert {"SQL", "Python"} <= terms
+    stopped = {r.term for r in jd_reqs.deterministic(text + "\nAbout us\nWe use Kubernetes.\n", G, V).requirements}
+    assert "Kubernetes" not in stopped

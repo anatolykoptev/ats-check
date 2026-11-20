@@ -45,6 +45,11 @@ def default_master():
     return str(cfg.load().master or "") if cfg else ""
 
 
+def default_guard():
+    cfg = _load("offersmith_config", "ats_check/config.py")
+    return str(cfg.load().guard or "") if cfg else ""
+
+
 def absence(text: str, neg, full: bool = True) -> bool:
     """Is this line an absence note ('Java: none', 'Has NOT worked in Hubspot', 'No Kubernetes experience')?
     A denied item must NAME something (a Capitalised or CamelCase word that does not merely start the
@@ -69,24 +74,25 @@ def absence(text: str, neg, full: bool = True) -> bool:
 
 
 def guard_phrases(path: str) -> list[str]:
-    """Quoted claims (else the claim cell) in the 'Claims not supported' table of the sibling claim guard."""
+    """Quoted claims (else the claim cell) in the guard's 'Claims not supported' table, and the values in its
+    'Metrics not used' table: both are prohibitions a bullet or a letter must not repeat."""
     if not os.path.exists(path):
         return []
     out, on = [], False
     for ln in open(path, encoding="utf-8").read().splitlines():
         if ln.startswith("#"):
-            on = bool(re.search(r"claims? not supported", ln, re.I))
+            on = bool(re.search(r"claims? not supported|metrics? not used", ln, re.I))
             continue
         if on and ln.lstrip().startswith("|") and not re.fullmatch(r"[\s|:\-]+", ln):
             cell = ln.strip().strip("|").split("|")[0].strip()
-            if cell.lower() == "claim":
+            if cell.lower() in ("claim", "value"):
                 continue
             q = re.findall(r"[\"“]([^\"”]+)[\"”]", cell)
             out += q or [cell]
     return [p for p in out if len(p) >= 6]
 
 
-def main(path: str) -> int:
+def main(path: str, guard: str = "") -> int:
     text = open(path, encoding="utf-8").read()
     lines = text.splitlines()
     out = []
@@ -99,9 +105,13 @@ def main(path: str) -> int:
     stem = base.rsplit(" — ", 1)[0] if " — " in base else ""
     for s in SIDECARS:
         f = os.path.join(folder, f"{stem} — {s}.md")
+        if s == "claim guard" and guard:
+            if not os.path.exists(guard):
+                out.append(f"configured claim guard not found: {guard}")
+            continue
         if not os.path.exists(f):
             out.append(f"sidecar missing: {f}")
-    guard_file = os.path.join(folder, f"{stem} — claim guard.md")
+    guard_file = guard or os.path.join(folder, f"{stem} — claim guard.md")
 
     # 2. bullets in the bank sections carry a unique id; no absence notes; no em-dash; role codes
     in_bank, in_rules, in_skills_sec, ids, seen, bodies = False, False, False, set(), {}, {}
@@ -180,7 +190,13 @@ def main(path: str) -> int:
         else:
             raw_body = " ".join(bodies.get(t, "") for t in toks)
             body = raw_body.replace(",", "")
-            if m.group(1) in raw_body:      # the home bullet cites the bank row: the number lives there, once
+            if m.group(1) in raw_body:      # the home bullet cites the bank row: the number may live in the row, once
+                numre = r"\d[\d,]*(?:\.\d+)?"
+                bank_nums = {x.replace(",", "").rstrip(".") for x in re.findall(numre, value)}
+                body_nums = [x.rstrip(".") for x in re.findall(numre, body)]
+                other = [x for x in body_nums if len(x) >= 3 and x not in bank_nums and not re.fullmatch(r"(?:19|20)\d\d", x)]
+                if other and not bank_nums <= set(body_nums):      # it neither carries the value nor stays silent about it
+                    out.append(f"L{n} {m.group(1)} is cited by {', '.join(toks)}, which carries {other[0]}, but the bank value is {value}")
                 continue
             for num in re.findall(r"\d[\d,]*(?:\.\d+)?", value):
                 if len(num) == 1:      # a lone digit may be written as a word ('three fixes')
@@ -216,8 +232,9 @@ def main(path: str) -> int:
 
 if __name__ == "__main__":
     target = sys.argv[1] if len(sys.argv) > 1 else default_master()
+    guard = default_guard() if len(sys.argv) <= 1 else ""      # a configured guard goes with the configured master
     if not target or not os.path.isfile(target):
         print(f"cannot check: no master resume (pass a path, or set master in offersmith.toml): {target or '(unset)'}",
               file=sys.stderr)
         sys.exit(2)
-    sys.exit(main(target))
+    sys.exit(main(target, guard))

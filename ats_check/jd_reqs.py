@@ -153,7 +153,8 @@ def from_llm_json(d: dict, groups: list[list[str]] | None = None) -> JD:
 # ---------------------------------------------------------------- deterministic fallback
 REQ_HEAD = re.compile(r"(minimum|basic|required|key) (qualifications|requirements)|what you('| wi)ll need|you have|must have|requirements|who you are|about you|what we('| a)re looking for", re.I)
 PREF_HEAD = re.compile(r"preferred|nice to have|bonus|desired|ideal|a plus|extra credit|pluses", re.I)
-STOP_HEAD = re.compile(r"benefits|perks|compensation|salary|equal opportunity|accommodations|pay range|about (?:us|the company|the team)|why", re.I)
+STOP_HEAD = re.compile(r"benefits|perks|compensation|salary|equal opportunity|accommodations|pay range|why", re.I)
+ABOUT_HEAD = re.compile(r"^about (?:us|the company|the team)\b", re.I)      # a heading line, not 'passionate about user experience'
 ACRO_STOP = {"US", "USA", "AND", "THE", "FOR", "WITH", "ALL", "YOU", "OUR", "EEO", "HR", "CEO", "USD", "PST", "PT", "OR", "IT", "AM", "PM", "NO", "OK", "AN", "TO", "ON", "IN", "OF", "BY", "AS", "AT", "WE", "IF", "DC"}
 PROPER = re.compile(r"\b[A-Z][a-z]+(?: [A-Z][a-z]+){1,3}\b")
 CAMEL = re.compile(r"\b(?:[A-Z][a-z]+[A-Z]\w*|[A-Za-z]+\.js|[A-Z]{2,}[a-z]+\w*)\b")
@@ -169,7 +170,7 @@ def _sections(text: str) -> list[tuple[str, str]]:
         if not s:
             continue
         short = len(s.split()) <= 9 and not s.endswith(".")
-        if short and STOP_HEAD.search(s):
+        if short and (STOP_HEAD.search(s) or ABOUT_HEAD.match(s)):
             cur = "stop"
         elif short and PREF_HEAD.search(s):
             cur = "preferred"

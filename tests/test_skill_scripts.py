@@ -233,3 +233,106 @@ def test_letter_check_reads_the_master_from_the_config(letter, monkeypatch, tmp_
     monkeypatch.setenv("OFFERSMITH_CONFIG", str(cfg))
     rc, out = py(CHECK_LETTER, letter)
     assert rc == 0, out
+
+
+# ---- review fixes: each test names the mutation that turns it red
+
+def seed_bullet(bank, line):
+    edit(bank / MASTER_NAME, "- **KPE-01**", f"{line}\n- **KPE-01**")
+
+
+def test_a_metric_cited_by_its_bullet_must_not_be_contradicted_by_the_bank(bank):
+    # mutation: check_master `if m.group(1) in raw_body:` branch back to a bare `continue`
+    edit(bank / MASTER_NAME, "| M-01 | 12,345 |", "| M-01 | 99,999 |")
+    rc, out = py(CHECK_MASTER, bank / MASTER_NAME)
+    assert rc == 1 and "is cited by P-EXT-01, which carries 12345, but the bank value is 99,999" in out, out
+
+
+def test_metrics_not_used_in_the_guard_are_rejected_in_master_bullets(bank):
+    # mutation: check_master.guard_phrases regex back to "claims? not supported" only
+    seed_bullet(bank, "- **KPE-12** Piloted the engines with 120 devices, 40 calls. `AP`")
+    rc, out = py(CHECK_MASTER, bank / MASTER_NAME)
+    assert rc == 1 and "contains a claim the guard rejects: 120 devices, 40 calls" in out, out
+
+
+def test_a_configured_guard_is_the_one_the_master_lint_uses(bank, tmp_path, monkeypatch):
+    # mutation: check_master.main ignores `guard` (guard_file back to the sibling path)
+    other = tmp_path / "elsewhere"
+    other.mkdir()
+    (other / "guard.md").write_text("# g\n\n## Claims not supported\n| Claim | Why |\n|---|---|\n| \"knowledge graph\" | test |\n", encoding="utf-8")
+    cfg = tmp_path / "offersmith.toml"
+    cfg.write_text(f'master = "{bank / MASTER_NAME}"\nguard = "{other / "guard.md"}"\n', encoding="utf-8")
+    monkeypatch.setenv("OFFERSMITH_CONFIG", str(cfg))
+    rc, out = py(CHECK_MASTER)
+    assert rc == 1 and "contains a claim the guard rejects: knowledge graph" in out, out
+
+
+def test_resume_number_must_be_a_whole_number_of_the_master(tmp_path):
+    # mutation: check_resume bank back to the comma-stripped text with `flat not in bank` (substring test)
+    f = tmp_path / "resume.md"
+    shutil.copy(EX / "resume" / "resume.md", f)
+    edit(f, "- Built dictation: hold a key, speak, text appears at the cursor, in Python.", "- Built dictation for 234 customers: hold a key, speak, text appears at the cursor.")
+    rc, out = py(CHECK_RESUME, f, "--master", EX / MASTER_NAME)
+    assert rc == 1 and "number 234 is not in the master" in out, out
+
+
+def test_a_quoted_pdf_name_is_still_checked(tmp_path):
+    # mutation: check_resume pdfname back to `(\S+)` so the quotes stay in the file name and the stale PDF is never found
+    need("pdfinfo")
+    f = tmp_path / "resume.md"
+    shutil.copy(EX / "resume" / "resume.md", f)
+    edit(f, "pdf: Jane_Example_Resume.pdf", 'pdf: "Jane_Example_Resume.pdf"')
+    (tmp_path / "Jane_Example_Resume.pdf").write_bytes(b"%PDF-1.4\n")
+    t = __import__("time").time() + 60
+    os.utime(f, (t, t))
+    rc, out = py(CHECK_RESUME, f, "--master", EX / MASTER_NAME)
+    assert rc == 1 and "PDF is older than the resume" in out, out
+
+
+def letter_with_master_line(tmp_path, bank_line, sentence, entry_ids):
+    shutil.copytree(EX / "cover-letter", tmp_path / "l")
+    for fpath in EX.glob("Jane Example — *.md"):
+        shutil.copy(fpath, tmp_path / fpath.name)
+    edit(tmp_path / MASTER_NAME, "- **KPE-01**", f"{bank_line}\n- **KPE-01**")
+    md = tmp_path / "l" / "cover-letter.md"
+    add(md, sentence)
+    facts = md.with_name("cover-letter.facts.json")
+    edit(facts, "[\n", '[\n {"text": "%s", "ids": %s},\n' % (sentence, entry_ids.replace("'", '"')))
+    return md
+
+
+def test_a_bullet_id_is_not_numeric_evidence(tmp_path):
+    # mutation: check_letter.digits() back to NUM.findall(s) without ID_TOKEN.sub
+    need("pandoc", "typst", "jq", "pdfinfo")
+    md = letter_with_master_line(tmp_path, "- **DEV-40** Built internal tooling. `AP`", "I served 40 customers.", "['DEV-40']")
+    rc, out = run_letter(md, tmp_path)
+    assert rc == 1 and "40 is not in DEV-40" in out, out
+
+
+@pytest.mark.parametrize("word", ["leveraging", "orchestrating", "synergized"])
+def test_dropped_e_inflections_of_a_kill_list_word_are_caught(letter, word):
+    # mutation: check_letter.find_cliches single-word branch back to `{term}[a-z]*` (no dropped-e stem)
+    need("pandoc", "typst", "jq", "pdfinfo")
+    add(letter, f"I kept {word} Postgres.")
+    rc, out = run_letter(letter)
+    assert rc == 1 and "cliche from the kill-list" in out, out
+
+
+def test_the_configured_guard_is_used_by_the_letter_check(letter, tmp_path, monkeypatch):
+    # mutation: check_letter.load_master ignores guard_arg / cm.default_guard() (sibling path only)
+    need("pandoc", "typst", "jq", "pdfinfo")
+    run_letter(letter)
+    g = tmp_path / "other-guard.md"
+    g.write_text("# g\n\n## Never mention in a letter\n- Example Portal\n", encoding="utf-8")
+    rc, out = py(CHECK_LETTER, letter, "--master", EX / MASTER_NAME, "--guard", g)
+    assert rc == 1 and "wording the guard says never to mention: 'Example Portal'" in out, out
+    rc, out = py(CHECK_LETTER, letter, "--master", EX / MASTER_NAME, "--guard", tmp_path / "missing.md")
+    assert rc == 2 and "claim guard not found" in out
+
+
+def test_never_mention_also_covers_the_printed_header_and_subject(letter):
+    # mutation: check_letter `seen = body + " " + printed` back to `body`
+    need("pandoc", "typst", "jq", "pdfinfo")
+    edit(letter, "subject: Growth Engineer, Search and Answers", "subject: Growth Engineer, Nimbus partnership")
+    rc, out = run_letter(letter)
+    assert rc == 1 and "wording the guard says never to mention: 'Nimbus'" in out, out
