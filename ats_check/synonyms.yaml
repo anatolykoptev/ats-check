@@ -1,0 +1,102 @@
+# Editable synonym / acronym groups. Every form in a group counts as the same requirement.
+# The FIRST form is canonical (what a recruiter would type). A requirement matched through a
+# non-first form is reported as "form missing" so you can add the canonical spelling too.
+# Matching is case-insensitive, whole-word, hyphen/space tolerant. Add your own groups freely.
+# A group is a claim that every form IS the same thing: a broader word ('documentation', 'containers',
+# 'embeddings', bare 'agentic', 'PM') or a different product ('OpenAI' for 'OpenAI-compatible') is not a form.
+groups:
+  - [Model Context Protocol, MCP]
+  - [Large Language Model, LLM, LLMs, large language models]
+  - [Retrieval-Augmented Generation, RAG, retrieval augmented generation]
+  - [Artificial Intelligence, AI]
+  - [Machine Learning, ML]
+  - [Natural Language Processing, NLP]
+  - [Generative AI, GenAI, gen AI, generative artificial intelligence]
+  - [Agentic AI, AI agents, agentic workflows, LLM agents]
+  - [Prompt Engineering, prompt design, prompting]
+  - [Evaluation, evals, eval harness, evaluation sets, LLM evaluation]
+  - [Vector Database, vector DB, vector store, pgvector]
+  - [Continuous Integration, CI, CI/CD, CICD]
+  - [Application Programming Interface, API, APIs, REST API, REST]
+  - [Software Development Life Cycle, SDLC]
+  - [Kubernetes, K8s]
+  - [JavaScript, JS]
+  - [TypeScript, TS]
+  - [PostgreSQL, Postgres]
+  - [Amazon Web Services, AWS]
+  - [Google Cloud Platform, GCP, Google Cloud]
+  - [Microsoft Azure, Azure]
+  - [Customer Relationship Management, CRM]
+  - [Salesforce, SFDC]
+  - [Agentforce, Salesforce Agentforce]
+  - [Slack, Slack platform]
+  - [Solution Architecture, solutions architect, solution architect, solution design]
+  - [Proof of Concept, POC, proof-of-concept, working prototype, working proofs]
+  - [Stakeholder Management, stakeholders, cross-functional partners, cross-functional collaboration]
+  - [Product Management, product manager]
+  - [Project Management, program management, project manager]
+  - [User Experience, UX]
+  - [Software as a Service, SaaS]
+  - [Business Intelligence, BI]
+  - [Extract Transform Load, ETL]
+  - [Data Pipeline, data pipelines]
+  - [Python, Python3]
+  - [Golang, Go]
+  - [Node.js, NodeJS, Node]
+  - [React, React.js, ReactJS]
+  - [Docker, containerization]
+  - [Infrastructure as Code, IaC]
+  - [Anthropic Claude, Claude, Anthropic]
+  - [Fine-tuning, fine tuning, finetuning]
+  - [Customer Zero, customer-zero]
+  - [Go-to-Market, GTM, go to market]
+  - [Return on Investment, ROI]
+  - [Key Performance Indicator, KPI, KPIs]
+  - [Enablement, sales enablement]
+  - [Playbook, playbooks]
+  - [Technical Writing, technical documentation]
+  - [Test-Driven Development, TDD]
+  - [Open Source, open-source, OSS]
+  - [WebRTC, web RTC]
+  - [Speech Recognition, ASR, speech-to-text, STT]
+  - [Text to Speech, TTS]
+
+# Terms the deterministic (--no-llm) extractor recognises even when a JD mentions them once.
+# (Everything in `groups` is also recognised.)
+vocab:
+  - Java
+  - Rust
+  - SQL
+  - NoSQL
+  - Redis
+  - Kafka
+  - GraphQL
+  - gRPC
+  - Linux
+  - Git
+  - Jira
+  - Tableau
+  - Snowflake
+  - Databricks
+  - LangChain
+  - LangGraph
+  - Hugging Face
+  - PyTorch
+  - TensorFlow
+  - Apex
+  - Lightning
+  - Flow
+  - MuleSoft
+  - Tableau
+  - Data Cloud
+  - Einstein
+  - Prompt Builder
+  - Agile
+  - Scrum
+  - OAuth
+  - SSO
+  - SOC 2
+  - GDPR
+  - HIPAA
+  - FedRAMP
+  - security clearance
